@@ -21,7 +21,7 @@ import * as path from "path";
 // 1. Connexion a la base de donnees
 // ------------------------------------------------------------
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(process.env.DATABASE_URL!);
 const prisma = new PrismaClient({ adapter });
 
 // ------------------------------------------------------------
