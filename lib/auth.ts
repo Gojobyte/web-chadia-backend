@@ -23,6 +23,9 @@ import type {} from "@/lib/auth-types";
 // --------------------------------------------------------------------------
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Autoriser le host Railway (sinon NextAuth bloque les requetes en production)
+  trustHost: true,
+
   // Le PrismaAdapter connecte NextAuth a notre base de donnees
   adapter: PrismaAdapter(prisma),
 
