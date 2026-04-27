@@ -67,8 +67,10 @@ export async function POST(request: Request) {
   });
   } catch (err) {
     console.error("Login error:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : "";
     return error(
-      `Erreur serveur: ${err instanceof Error ? err.message : "inconnue"}`,
+      `Erreur serveur: ${message} | Stack: ${stack?.slice(0, 500)}`,
       500
     );
   }
