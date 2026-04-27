@@ -2,17 +2,11 @@ import { PrismaClient } from "@/app/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 // --------------------------------------------------------------------------
-// Client Prisma Singleton
+// Client Prisma Singleton (Lazy)
 // --------------------------------------------------------------------------
-// Pourquoi un "singleton" ?
-//
-// En developpement, Next.js recharge souvent le code (hot reload).
-// Sans singleton, chaque rechargement creerait une NOUVELLE connexion
-// a la base de donnees. Au bout de quelques minutes, tu aurais des
-// dizaines de connexions ouvertes → la BDD refuserait les nouvelles.
-//
-// Le singleton stocke le client Prisma dans une variable globale.
-// Comme ca, meme apres un rechargement, on reutilise la meme connexion.
+// Le client se cree seulement au premier appel, pas au demarrage.
+// C'est important car pendant le build sur Railway, DATABASE_URL
+// n'est pas disponible. Si on cree le client au demarrage, ca plante.
 // --------------------------------------------------------------------------
 
 const globalForPrisma = globalThis as unknown as {
@@ -24,13 +18,17 @@ function createPrismaClient() {
   if (!url) {
     throw new Error("DATABASE_URL is not set");
   }
-  // PrismaPg accepte directement une string (pas un objet)
   const adapter = new PrismaPg(url);
   return new PrismaClient({ adapter });
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+// "get prisma" = le client est cree seulement quand on y accede
+// Pas au moment ou le fichier est importe
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    if (!globalForPrisma.prisma) {
+      globalForPrisma.prisma = createPrismaClient();
+    }
+    return Reflect.get(globalForPrisma.prisma, prop);
+  },
+});
