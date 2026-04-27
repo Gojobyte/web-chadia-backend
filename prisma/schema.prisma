@@ -1,7 +1,10 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// ============================================================
+// ONG CHADIA — Schema Prisma (Base de donnees)
+// ============================================================
+// Ce fichier definit TOUTES les tables de la base de donnees.
+// Chaque "model" = une table. Chaque champ = une colonne.
+// Prisma traduit ce fichier en SQL automatiquement.
+// ============================================================
 
 generator client {
   provider = "prisma-client"
@@ -10,4 +13,342 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// ============================================================
+// AUTHENTIFICATION & UTILISATEURS
+// ============================================================
+
+// Les 3 roles possibles dans le systeme
+enum Role {
+  SUPER_ADMIN // Peut tout faire, y compris gerer les utilisateurs
+  ADMIN       // Peut gerer le contenu (projets, domaines, equipe...)
+  EMPLOYE     // Lecture seule
+}
+
+// Table des utilisateurs (admins, employes)
+model User {
+  id           String  @id @default(cuid()) // Identifiant unique auto-genere
+  email        String  @unique              // Email unique (pour la connexion)
+  name         String                       // Nom complet
+  passwordHash String?                      // Hash du mot de passe (null si Google uniquement)
+  role         Role    @default(EMPLOYE)    // Role par defaut = EMPLOYE
+  image        String?                      // Photo de profil (optionnel)
+  googleId     String? @unique              // ID Google (si connexion Google)
+
+  // Relations — un utilisateur peut avoir cree des projets, lu des messages, etc.
+  projetsCreated  Projet[]         @relation("ProjetCreatedBy")
+  infosOngUpdated InfosONG[]       @relation("InfosONGUpdatedBy")
+  contactUpdated  ContactInfo[]    @relation("ContactUpdatedBy")
+  messagesRead    MessageContact[] @relation("MessageReadBy")
+  logs            LogActivite[]
+
+  // Tables NextAuth (gestion des sessions)
+  accounts Account[]
+  sessions Session[]
+
+  createdAt DateTime @default(now()) // Date de creation auto
+  updatedAt DateTime @updatedAt      // Date de modif auto
+
+  @@map("users") // Nom de la table en BDD = "users"
+}
+
+// ============================================================
+// TABLES NEXTAUTH (requises par le Prisma Adapter)
+// ============================================================
+// Ces tables sont gerees automatiquement par NextAuth.
+// Tu n'as pas besoin d'y toucher directement.
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ============================================================
+// CONTENU DU SITE — PROJETS & DOMAINES
+// ============================================================
+
+// Table des projets de l'ONG
+model Projet {
+  id          String    @id @default(cuid())
+  titre       String
+  description String    @db.Text           // @db.Text = texte long (pas de limite)
+  statut      String    @default("en cours") // "en cours" ou "termine"
+  dateDebut   DateTime
+  dateFin     DateTime?                     // Optionnel (? = peut etre null)
+  image       String?
+  featured    Boolean   @default(false)     // Mis en avant sur la homepage ?
+  responsable String?
+
+  // Relation : chaque projet appartient a UN domaine
+  domaine   Domaine @relation(fields: [domaineId], references: [id])
+  domaineId String
+
+  // Relation many-to-many : un projet peut etre dans PLUSIEURS zones
+  zonesGeographiques ZoneGeographique[] @relation("ProjetZones")
+
+  // Un projet a PLUSIEURS indicateurs d'impact
+  indicateursImpact IndicateurImpact[] @relation("ProjetIndicateurs")
+
+  // Qui a cree ce projet dans le panel admin
+  createdBy   User?   @relation("ProjetCreatedBy", fields: [createdById], references: [id])
+  createdById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("projets")
+}
+
+// Table des domaines d'intervention (Sante, Education, Femmes, Eau, Urgences)
+model Domaine {
+  id               String  @id @default(cuid())
+  titre            String
+  icone            String                    // Emoji ou nom d'icone
+  description      String                    // Description courte
+  descriptionLongue String  @db.Text         // Description detaillee
+  featured         Boolean @default(false)
+
+  // Relations : un domaine a plusieurs projets, activites, indicateurs, zones
+  projets           Projet[]
+  activitesCles     ActiviteCle[]
+  indicateursImpact IndicateurImpact[] @relation("DomaineIndicateurs")
+  zonesActives      ZoneGeographique[] @relation("DomaineZones")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("domaines")
+}
+
+// Table des zones geographiques (N'Djamena, Mongo, Guera...)
+// Separee pour eviter les doublons et les fautes d'orthographe
+model ZoneGeographique {
+  id  String @id @default(cuid())
+  nom String @unique // Chaque zone a un nom unique
+
+  // Relations many-to-many
+  projets  Projet[]  @relation("ProjetZones")
+  domaines Domaine[] @relation("DomaineZones")
+
+  @@map("zones_geographiques")
+}
+
+// Activites cles d'un domaine (ex: "Formation d'agents de sante")
+model ActiviteCle {
+  id    String @id @default(cuid())
+  label String
+  ordre Int    @default(0) // Pour controler l'ordre d'affichage
+
+  domaine   Domaine @relation(fields: [domaineId], references: [id], onDelete: Cascade)
+  domaineId String
+
+  @@map("activites_cles")
+}
+
+// Indicateurs d'impact (ex: "3 200 beneficiaires directs")
+// Peut appartenir a un Projet OU a un Domaine (pas les deux en meme temps)
+model IndicateurImpact {
+  id     String @id @default(cuid())
+  valeur String // Ex: "3 200"
+  label  String // Ex: "beneficiaires directs"
+
+  projet    Projet?  @relation("ProjetIndicateurs", fields: [projetId], references: [id], onDelete: Cascade)
+  projetId  String?
+  domaine   Domaine? @relation("DomaineIndicateurs", fields: [domaineId], references: [id], onDelete: Cascade)
+  domaineId String?
+
+  @@map("indicateurs_impact")
+}
+
+// ============================================================
+// CONTENU DU SITE — EQUIPE, PARTENAIRES, CHIFFRES
+// ============================================================
+
+// Membres de l'equipe affiches sur le site
+model MembreEquipe {
+  id          String    @id @default(cuid())
+  nom         String
+  poste       String
+  photo       String?
+  institution String?
+  consent     Boolean   @default(false)  // RGPD : consentement pour afficher le profil
+  consentDate DateTime?                  // Date du consentement
+  ordre       Int       @default(0)      // Ordre d'affichage (drag & drop)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("membres_equipe")
+}
+
+// Partenaires de l'ONG (PNUD, UE, etc.)
+model Partenaire {
+  id    String  @id @default(cuid())
+  nom   String
+  logo  String                           // URL du logo
+  url   String?                          // Lien vers le site du partenaire
+  ordre Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("partenaires")
+}
+
+// Chiffres cles affiches sur la homepage (ex: "568M+ FCFA budget gere")
+model ChiffreCle {
+  id     String  @id @default(cuid())
+  valeur String  // Ex: "568M+"
+  unite  String? // Ex: "FCFA" (optionnel)
+  label  String  // Ex: "Budget total gere"
+  ordre  Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("chiffres_cles")
+}
+
+// ============================================================
+// INFOS GLOBALES DE L'ONG (tables singleton — une seule ligne)
+// ============================================================
+
+// Toutes les infos globales de l'ONG en une seule table
+// id = "singleton" → il n'y a qu'une seule ligne dans cette table
+model InfosONG {
+  id                  String  @id @default("singleton")
+  heroTitre           String  @default("")
+  heroTagline         String  @default("")
+  heroMetaDescription String  @default("")
+  precomBadgeVisible  Boolean @default(true)
+  precomBadgeTexte    String  @default("")
+  histoire            String  @default("") @db.Text
+  vision              String  @default("") @db.Text
+  mission             String  @default("") @db.Text
+  statutLegalNumero   String  @default("")
+  statutLegalDate     String  @default("")
+  statutLegalAutorite String  @default("")
+  ctaWhatsappMessage  String  @default("")
+
+  // Les valeurs de l'ONG (Proximite, Transparence, etc.)
+  valeurs Valeur[]
+
+  updatedBy   User?   @relation("InfosONGUpdatedBy", fields: [updatedById], references: [id])
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("infos_ong")
+}
+
+// Valeurs de l'ONG (ex: "Proximite — Nous intervenons au plus pres...")
+model Valeur {
+  id          String @id @default(cuid())
+  titre       String
+  description String
+  ordre       Int    @default(0)
+
+  infosONG   InfosONG @relation(fields: [infosONGId], references: [id], onDelete: Cascade)
+  infosONGId String
+
+  @@map("valeurs")
+}
+
+// ============================================================
+// CONTACT
+// ============================================================
+
+// Infos de contact de l'ONG (table singleton)
+model ContactInfo {
+  id        String @id @default("singleton")
+  email     String @default("")
+  telephone String @default("")
+  adresse   String @default("")
+  horaires  String @default("")
+  whatsapp  String @default("")
+
+  updatedBy   User?   @relation("ContactUpdatedBy", fields: [updatedById], references: [id])
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("contact_info")
+}
+
+// Messages recus via le formulaire de contact du site
+model MessageContact {
+  id      String @id @default(cuid())
+  nom     String
+  email   String
+  sujet   String
+  message String @db.Text
+  statut  String @default("non_lu") // "non_lu" | "lu" | "archive"
+
+  readBy   User?    @relation("MessageReadBy", fields: [readById], references: [id])
+  readById String?
+  readAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@map("messages_contact")
+}
+
+// ============================================================
+// LOGS D'ACTIVITE
+// ============================================================
+
+// Journal de toutes les actions effectuees dans le panel admin
+// Ex: "Adoum a modifie le projet proj-001 le 27/04/2026"
+model LogActivite {
+  id       String  @id @default(cuid())
+  action   String  // "CREATE" | "UPDATE" | "DELETE"
+  entite   String  // "Projet" | "Domaine" | "MembreEquipe" | etc.
+  entiteId String  // L'ID de l'element concerne
+  details  String? @db.Text // Details en JSON (ce qui a change)
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  createdAt DateTime @default(now())
+
+  // Index pour accelerer les recherches
+  @@index([entite, entiteId]) // Recherche par type + ID
+  @@index([userId])           // Recherche par utilisateur
+  @@index([createdAt])        // Tri par date
+
+  @@map("logs_activite")
 }
