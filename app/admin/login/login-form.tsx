@@ -29,6 +29,27 @@ export function LoginForm() {
     setError("");
     setLoading(true);
 
+    // Etape 1 : Verifier le rate limit + les identifiants
+    try {
+      const checkRes = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const checkData = await checkRes.json();
+
+      if (!checkRes.ok) {
+        setError(checkData.error);
+        setLoading(false);
+        return;
+      }
+    } catch {
+      setError("Erreur de connexion au serveur.");
+      setLoading(false);
+      return;
+    }
+
+    // Etape 2 : Creer la session NextAuth
     const result = await signIn("credentials", {
       email,
       password,
