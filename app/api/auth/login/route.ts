@@ -20,6 +20,7 @@ import { headers } from "next/headers";
 // --------------------------------------------------------------------------
 
 export async function POST(request: Request) {
+  try {
   // Recuperer l'IP du client
   const headersList = await headers();
   const ip =
@@ -64,4 +65,11 @@ export async function POST(request: Request) {
     ok: true,
     remaining: rateCheck.remaining,
   });
+  } catch (err) {
+    console.error("Login error:", err);
+    return error(
+      `Erreur serveur: ${err instanceof Error ? err.message : "inconnue"}`,
+      500
+    );
+  }
 }
