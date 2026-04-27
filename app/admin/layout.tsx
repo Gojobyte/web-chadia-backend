@@ -1,20 +1,41 @@
+import { auth } from "@/lib/auth";
+import { Sidebar } from "@/components/admin/sidebar";
+import { Header } from "@/components/admin/header";
+
 // --------------------------------------------------------------------------
 // Layout Admin
 // --------------------------------------------------------------------------
-// Ce layout enveloppe TOUTES les pages sous /admin/*.
-// Pour l'instant il est minimal — on ajoutera la sidebar et le header
-// dans l'Epic 4 quand on construira le panel admin complet.
+// Si l'utilisateur est connecte → affiche sidebar + header + contenu
+// Si pas connecte → affiche juste le contenu (= la page de login)
 // --------------------------------------------------------------------------
 
 export const metadata = {
   title: "ONG CHADIA — Administration",
-  description: "Panel d'administration de l'ONG CHADIA",
 };
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  const session = await auth();
+
+  // Pas connecte → afficher juste les children (page de login)
+  if (!session?.user) {
+    return <>{children}</>;
+  }
+
+  // Connecte → afficher le layout complet
+  return (
+    <div className="flex min-h-screen bg-gray-50">
+      <Sidebar userRole={session.user.role} />
+      <div className="flex-1 flex flex-col">
+        <Header
+          userName={session.user.name ?? session.user.email ?? ""}
+          userRole={session.user.role}
+        />
+        <main className="flex-1 p-6">{children}</main>
+      </div>
+    </div>
+  );
 }
