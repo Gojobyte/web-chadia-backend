@@ -23,7 +23,7 @@ export async function GET() {
     prisma.membreEquipe.findMany({
       where: { consent: true },
       orderBy: { ordre: "asc" },
-      select: { nom: true, poste: true, photo: true, institution: true },
+      select: { nom: true, poste: true, photo: true, institution: true, consent: true },
     }),
     prisma.partenaire.findMany({ orderBy: { ordre: "asc" } }),
   ]);
