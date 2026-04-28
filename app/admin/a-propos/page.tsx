@@ -1,9 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
+import { ImageUpload } from "@/components/admin/image-upload";
 
 export default function AProposPage() {
   const [form, setForm] = useState({
-    heroTitre: "", heroTagline: "", heroMetaDescription: "",
+    heroTitre: "", heroTagline: "", heroMetaDescription: "", heroImage: "",
     precomBadgeVisible: true, precomBadgeTexte: "",
     histoire: "", vision: "", mission: "", ctaWhatsappMessage: "",
     statutLegalNumero: "", statutLegalDate: "", statutLegalAutorite: "",
@@ -17,7 +18,7 @@ export default function AProposPage() {
       if (d.infos) {
         const i = d.infos;
         setForm({
-          heroTitre: i.heroTitre, heroTagline: i.heroTagline, heroMetaDescription: i.heroMetaDescription,
+          heroTitre: i.heroTitre, heroTagline: i.heroTagline, heroMetaDescription: i.heroMetaDescription, heroImage: i.heroImage ?? "",
           precomBadgeVisible: i.precomBadgeVisible, precomBadgeTexte: i.precomBadgeTexte,
           histoire: i.histoire, vision: i.vision, mission: i.mission, ctaWhatsappMessage: i.ctaWhatsappMessage,
           statutLegalNumero: i.statutLegalNumero, statutLegalDate: i.statutLegalDate, statutLegalAutorite: i.statutLegalAutorite,
@@ -46,6 +47,7 @@ export default function AProposPage() {
           <div><label className="block text-sm font-medium text-gray-700 mb-1">Titre</label><input value={form.heroTitre} onChange={(e) => setForm({...form, heroTitre: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md" /></div>
           <div><label className="block text-sm font-medium text-gray-700 mb-1">Tagline</label><input value={form.heroTagline} onChange={(e) => setForm({...form, heroTagline: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md" /></div>
           <div><label className="block text-sm font-medium text-gray-700 mb-1">Meta description</label><input value={form.heroMetaDescription} onChange={(e) => setForm({...form, heroMetaDescription: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-md" /></div>
+          <ImageUpload folder="hero" currentUrl={form.heroImage} onUpload={(url) => setForm({...form, heroImage: url})} label="Image de fond du hero" />
           <div className="flex items-center gap-2">
             <input type="checkbox" checked={form.precomBadgeVisible} onChange={(e) => setForm({...form, precomBadgeVisible: e.target.checked})} />
             <label className="text-sm text-gray-700">Afficher le badge PRECOM</label>

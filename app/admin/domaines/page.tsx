@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { ImageUpload } from "@/components/admin/image-upload";
 
 interface Domaine {
   id: string; titre: string; icone: string; description: string;
-  descriptionLongue: string; featured: boolean; _count: { projets: number };
+  descriptionLongue: string; image: string | null; featured: boolean; _count: { projets: number };
 }
 
 export default function DomainesPage() {
@@ -12,7 +13,7 @@ export default function DomainesPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState({ titre: "", icone: "", description: "", descriptionLongue: "", featured: false });
+  const [form, setForm] = useState({ titre: "", icone: "", description: "", descriptionLongue: "", image: "", featured: false });
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -25,13 +26,13 @@ export default function DomainesPage() {
 
   function startEdit(d: Domaine) {
     setEditId(d.id);
-    setForm({ titre: d.titre, icone: d.icone, description: d.description, descriptionLongue: d.descriptionLongue, featured: d.featured });
+    setForm({ titre: d.titre, icone: d.icone, description: d.description, descriptionLongue: d.descriptionLongue, image: d.image ?? "", featured: d.featured });
     setShowForm(true);
   }
 
   function resetForm() {
     setEditId(null);
-    setForm({ titre: "", icone: "", description: "", descriptionLongue: "", featured: false });
+    setForm({ titre: "", icone: "", description: "", descriptionLongue: "", image: "", featured: false });
     setShowForm(false); setError("");
   }
 
@@ -73,6 +74,7 @@ export default function DomainesPage() {
           </div>
           <div><label className="block text-sm font-medium text-gray-700 mb-1">Description courte</label><input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required className="w-full px-3 py-2 border border-gray-300 rounded-md" /></div>
           <div><label className="block text-sm font-medium text-gray-700 mb-1">Description longue</label><textarea value={form.descriptionLongue} onChange={(e) => setForm({ ...form, descriptionLongue: e.target.value })} required rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-md" /></div>
+          <ImageUpload folder="domaines" currentUrl={form.image} onUpload={(url) => setForm({ ...form, image: url })} label="Image du domaine" />
           <div className="flex items-center gap-2">
             <input type="checkbox" checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} className="rounded border-gray-300" />
             <label className="text-sm text-gray-700">Mettre en avant sur la homepage</label>

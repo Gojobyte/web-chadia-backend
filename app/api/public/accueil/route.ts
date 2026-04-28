@@ -14,6 +14,7 @@ export async function GET() {
         heroTitre: true,
         heroTagline: true,
         heroMetaDescription: true,
+        heroImage: true,
         precomBadgeVisible: true,
         precomBadgeTexte: true,
         ctaWhatsappMessage: true,
@@ -34,6 +35,7 @@ export async function GET() {
           titre: infos.heroTitre,
           tagline: infos.heroTagline,
           metaDescription: infos.heroMetaDescription,
+          heroImage: infos.heroImage,
           precomBadge: {
             visible: infos.precomBadgeVisible,
             texte: infos.precomBadgeTexte,

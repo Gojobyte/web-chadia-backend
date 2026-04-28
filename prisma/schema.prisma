@@ -142,6 +142,7 @@ model Domaine {
   icone            String                    // Emoji ou nom d'icone
   description      String                    // Description courte
   descriptionLongue String  @db.Text         // Description detaillee
+  image            String?                    // URL image du domaine (Cloudinary)
   featured         Boolean @default(false)
 
   // Relations : un domaine a plusieurs projets, activites, indicateurs, zones
@@ -256,6 +257,7 @@ model InfosONG {
   heroTitre           String  @default("")
   heroTagline         String  @default("")
   heroMetaDescription String  @default("")
+  heroImage           String  @default("")    // URL image hero (Cloudinary)
   precomBadgeVisible  Boolean @default(true)
   precomBadgeTexte    String  @default("")
   histoire            String  @default("") @db.Text
