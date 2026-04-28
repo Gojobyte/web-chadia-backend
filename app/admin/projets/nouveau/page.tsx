@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { ImageUpload } from "@/components/admin/image-upload";
 
 interface Domaine {
   id: string;
@@ -22,6 +23,7 @@ export default function NouveauProjetPage() {
     dateFin: "",
     featured: false,
     responsable: "",
+    image: "",
   });
 
   useEffect(() => {
@@ -109,6 +111,8 @@ export default function NouveauProjetPage() {
           <input id="responsable" type="text" value={form.responsable} onChange={(e) => setForm({ ...form, responsable: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
+
+        <ImageUpload folder="projets" onUpload={(url) => setForm({ ...form, image: url })} label="Image du projet (optionnel)" />
 
         <div className="flex items-center gap-2">
           <input id="featured" type="checkbox" checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })}

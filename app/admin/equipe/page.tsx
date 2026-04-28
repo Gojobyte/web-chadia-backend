@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { ImageUpload } from "@/components/admin/image-upload";
 
 interface Membre { id: string; nom: string; poste: string; photo: string | null; institution: string | null; consent: boolean; ordre: number; }
 
@@ -67,7 +68,7 @@ export default function EquipePage() {
           <div className="grid grid-cols-2 gap-4">
             <div><label className="block text-sm font-medium text-gray-700 mb-1">Nom</label><input value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} required className="w-full px-3 py-2 border border-gray-300 rounded-md" /></div>
             <div><label className="block text-sm font-medium text-gray-700 mb-1">Poste</label><input value={form.poste} onChange={(e) => setForm({ ...form, poste: e.target.value })} required className="w-full px-3 py-2 border border-gray-300 rounded-md" /></div>
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Photo (URL)</label><input value={form.photo} onChange={(e) => setForm({ ...form, photo: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-md" /></div>
+            <div><ImageUpload folder="equipe" currentUrl={form.photo} onUpload={(url) => setForm({ ...form, photo: url })} label="Photo" /></div>
             <div><label className="block text-sm font-medium text-gray-700 mb-1">Institution</label><input value={form.institution} onChange={(e) => setForm({ ...form, institution: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-md" /></div>
           </div>
           <div className="flex items-center gap-2">

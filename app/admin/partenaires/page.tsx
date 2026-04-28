@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { ImageUpload } from "@/components/admin/image-upload";
 
 interface Partenaire { id: string; nom: string; logo: string; url: string | null; }
 
@@ -48,7 +49,7 @@ export default function PartenairesPage() {
           <h2 className="text-lg font-semibold">{editId ? "Modifier" : "Ajouter un partenaire"}</h2>
           <div className="grid grid-cols-3 gap-4">
             <div><label className="block text-sm font-medium text-gray-700 mb-1">Nom</label><input value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} required className="w-full px-3 py-2 border border-gray-300 rounded-md" /></div>
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Logo (URL)</label><input value={form.logo} onChange={(e) => setForm({ ...form, logo: e.target.value })} required className="w-full px-3 py-2 border border-gray-300 rounded-md" /></div>
+            <div><ImageUpload folder="partenaires" currentUrl={form.logo} onUpload={(url) => setForm({ ...form, logo: url })} label="Logo" /></div>
             <div><label className="block text-sm font-medium text-gray-700 mb-1">Site web</label><input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-md" /></div>
           </div>
           <div className="flex gap-3">
